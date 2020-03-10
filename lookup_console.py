@@ -6,12 +6,12 @@ and add the selected word to the clipboard.
 """
 
 import sys
+import os
 import argparse
 import requests
 import configparser
 from PyInquirer import prompt
 from pyperclip import copy
-from itertools import chain
 
 
 parser = argparse.ArgumentParser()
@@ -20,7 +20,8 @@ parser.add_argument("-d", "--definitions", help="get the definitions", action="s
 arguments = parser.parse_args()
 
 config = configparser.ConfigParser()
-config.read('lookup_console.ini')
+dir_path = os.path.dirname(os.path.realpath(__file__))
+config.read(dir_path + '/lookup_console.ini')
 
 # Constants
 API_KEY = config['API']['api_key']
