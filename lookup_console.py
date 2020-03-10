@@ -8,41 +8,61 @@ and add the selected word to the clipboard.
 import sys
 import argparse
 import requests
+import configparser
 from PyInquirer import prompt
 from pyperclip import copy
+from itertools import chain
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("word", help="the word to look up")
+parser.add_argument("-d", "--definitions", help="get the definitions", action="store_true", default=False)
 arguments = parser.parse_args()
+
+config = configparser.ConfigParser()
+config.read('lookup_console.ini')
+
+# Constants
+API_KEY = config['API']['api_key']
+HEADERS = {
+        'x-rapidapi-host': "wordsapiv1.p.rapidapi.com",
+        'x-rapidapi-key': API_KEY
+    }
 
 
 def send_request(lookup_word):
-    url = f"https://api.datamuse.com/words?ml={lookup_word}"
-    response = requests.get(url, timeout=5)
+    url = f"https://wordsapiv1.p.rapidapi.com/words/{lookup_word}"
+    response = requests.get(url, timeout=5, headers=HEADERS)
 
     if response.status_code != 200:
         print(response)
         sys.exit(1)
 
-    return response.json()
+    return response.json()['results']
 
 
 def parse_response(response):
-    words = list()
-    for word in response:
-        words.append(word['word'])
+    result = list()
+    for res in response:
+        definition = res.get('definition', None)
+        synonyms = res.get('synonyms', None)
+        result.append((definition, synonyms))
 
-    return words
+    return result
 
 
 def prompt_result(result):
+    if arguments.definitions:
+        word_options = [res[0] for res in result]
+    else:
+        word_options = [synonym for word_data in result for synonym in word_data[1]]
+
     question = [
         {
             'type': 'list',
             'name': 'selected_word',
             'message': 'Select word to clipboard',
-            'choices': result,
-            'filter': lambda val: val.lower()
+            'choices': word_options
         }
     ]
 
