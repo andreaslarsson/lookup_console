@@ -39,14 +39,14 @@ def send_request(lookup_word):
         print(response)
         sys.exit(1)
 
-    return response.json()['results']
+    return response.json().get('results', None)
 
 
 def parse_response(response):
     result = list()
     for res in response:
-        definition = res.get('definition', None)
-        synonyms = res.get('synonyms', None)
+        definition = res.get('definition', '')
+        synonyms = res.get('synonyms', '')
         result.append((definition, synonyms))
 
     return result
@@ -72,6 +72,10 @@ def prompt_result(result):
 
 def lookup(word):
     response = send_request(word)
+    if response is None:
+        print(f"No result for {word}")
+        sys.exit(1)
+
     result = parse_response(response)
     selected_word = prompt_result(result)
     copy(selected_word)
