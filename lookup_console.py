@@ -6,64 +6,25 @@ and add the selected word to the clipboard.
 """
 
 import sys
-import os
 import argparse
-import requests
-import configparser
 from PyInquirer import prompt
 from pyperclip import copy
+import reference_book
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("word", help="the word to look up")
-parser.add_argument("-d", "--definitions", help="get the definitions", action="store_true", default=False)
+# parser.add_argument("-d", "--definitions", help="get the definitions", action="store_true", default=False)
 arguments = parser.parse_args()
-
-config = configparser.ConfigParser()
-dir_path = os.path.dirname(os.path.realpath(__file__))
-config.read(dir_path + '/lookup_console.ini')
-
-# Constants
-API_KEY = config['API']['api_key']
-HEADERS = {
-        'x-rapidapi-host': "wordsapiv1.p.rapidapi.com",
-        'x-rapidapi-key': API_KEY
-    }
-
-
-def send_request(lookup_word):
-    url = f"https://wordsapiv1.p.rapidapi.com/words/{lookup_word}"
-    response = requests.get(url, timeout=5, headers=HEADERS)
-
-    if response.status_code != 200:
-        print(response)
-        sys.exit(1)
-
-    return response.json().get('results', None)
-
-
-def parse_response(response):
-    result = list()
-    for res in response:
-        definition = res.get('definition', '')
-        synonyms = res.get('synonyms', '')
-        result.append((definition, synonyms))
-
-    return result
 
 
 def prompt_result(result):
-    if arguments.definitions:
-        word_options = [res[0] for res in result]
-    else:
-        word_options = [synonym for word_data in result for synonym in word_data[1]]
-
     question = [
         {
             'type': 'list',
             'name': 'selected_word',
             'message': 'Select word to clipboard',
-            'choices': word_options
+            'choices': result
         }
     ]
 
@@ -71,13 +32,13 @@ def prompt_result(result):
 
 
 def lookup(word):
-    response = send_request(word)
-    if response is None:
-        print(f"No result for {word}")
+    try:
+        result = reference_book.get_synonyms(word)
+    except reference_book.ReferenceBookException as e:
+        print(e)
         sys.exit(1)
 
-    result = parse_response(response)
-    selected_word = prompt_result(result)
+    selected_word = prompt_result(result.get('synonyms', None))
     copy(selected_word)
 
 
