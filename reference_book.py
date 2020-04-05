@@ -1,5 +1,6 @@
 import urllib.request
 import urllib.error
+from http import client
 import time
 from bs4 import BeautifulSoup
 from user_agent import generate_user_agent
@@ -26,7 +27,7 @@ def timeit(method):
 
 
 @timeit
-def _fetch_html(word, type):
+def fetch_html(word, type):
     url = f"https://www.{TYPE_TO_SITE[type]}.com/browse/{word}"
     headers = {'User-Agent': generate_user_agent(device_type="desktop", os=('mac', 'linux'))}
     request = urllib.request.Request(url, headers=headers)
@@ -35,12 +36,14 @@ def _fetch_html(word, type):
         html = urllib.request.urlopen(request, timeout=5).read()
     except urllib.error.HTTPError as e:
         raise ReferenceBookException(f"Exception occurred while fetching data for '{word}': {e.code} - {e.msg}")
-
+    except client.InvalidURL as e:
+        raise ReferenceBookException(e)
+    
     return html
 
 
 @timeit
-def _parse_synonyms_html(html):
+def parse_synonyms_html(html):
     if not html:
         raise ReferenceBookException("Cannot parse empty HTML")
 
@@ -55,10 +58,25 @@ def _parse_synonyms_html(html):
     return {'description': description, 'synonyms': synonyms}
 
 
+@timeit
+def parse_definitions_html(html):
+    soup = BeautifulSoup(html, 'html.parser')
+    first_sibling = soup.find('section', attrs={'id': 'top-definitions-section'})
+
+    definitions = list()
+
+    for sibling in first_sibling.next_siblings:
+        default_contents = (sibling.find('div', attrs={'class': 'default-content'}))
+        definitions.extend([def_div.get_text().strip() for def_div in default_contents if def_div])
+
+    return definitions
+
+
 def get_synonyms(word):
-    synonyms_html = _fetch_html(word, 'syn')
-    return _parse_synonyms_html(synonyms_html)
+    synonyms_html = fetch_html(word, 'syn')
+    return parse_synonyms_html(synonyms_html)
 
 
 def get_definitions(word):
-    raise NotImplementedError
+    definitions_html = fetch_html(word, 'def')
+    return parse_definitions_html(definitions_html)
