@@ -38,7 +38,7 @@ def fetch_html(word, type):
         raise ReferenceBookException(f"Exception occurred while fetching data for '{word}': {e.code} - {e.msg}")
     except client.InvalidURL as e:
         raise ReferenceBookException(e)
-    
+
     return html
 
 
@@ -67,7 +67,8 @@ def parse_definitions_html(html):
 
     for sibling in first_sibling.next_siblings:
         default_contents = (sibling.find('div', attrs={'class': 'default-content'}))
-        definitions.extend([def_div.get_text().strip() for def_div in default_contents if def_div])
+        if default_contents:
+            definitions.extend([def_div.get_text().strip() for def_div in default_contents if def_div])
 
     return definitions
 

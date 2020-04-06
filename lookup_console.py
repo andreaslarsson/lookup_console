@@ -20,7 +20,7 @@ def prompt_result(result):
         }
     ]
 
-    return prompt(question)['selected_word']
+    return prompt(question).get('selected_word', None)
 
 
 def get_synonyms(word):
@@ -31,6 +31,11 @@ def get_synonyms(word):
         sys.exit(1)
 
     selected_word = prompt_result(result.get('synonyms', None))
+
+    if not selected_word:
+        print("No word selected")
+        return sys.exit(0)
+
     copy(selected_word)
 
 
@@ -41,8 +46,11 @@ def get_definitions(word):
         print(e)
         sys.exit(1)
 
-    print(f"\nDefinitions for {word}:")
-    print(*result, sep="\n")
+    if result:
+        print(f"\nDefinitions for '{word}'':")
+        print(*result, sep="\n")
+    else:
+        print(f"No definitions found for '{word}'")
 
 
 parser = argparse.ArgumentParser()
