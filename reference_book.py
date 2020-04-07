@@ -60,12 +60,15 @@ def parse_synonyms_html(html):
 
 @timeit
 def parse_definitions_html(html):
+    if not html:
+        raise ReferenceBookException("Cannot parse empty HTML")
+
     soup = BeautifulSoup(html, 'html.parser')
-    first_sibling = soup.find('section', attrs={'id': 'top-definitions-section'})
+    definitions_section = soup.find('section', attrs={'id': 'top-definitions-section'})
 
     definitions = list()
 
-    for sibling in first_sibling.next_siblings:
+    for sibling in definitions_section.next_siblings:
         default_contents = (sibling.find('div', attrs={'class': 'default-content'}))
         if default_contents:
             definitions.extend([def_div.get_text().strip() for def_div in default_contents if def_div])

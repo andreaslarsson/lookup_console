@@ -47,7 +47,7 @@ def get_definitions(word):
         sys.exit(1)
 
     if result:
-        print(f"\nDefinitions for '{word}'':")
+        print(f"\nDefinitions for '{word}':")
         print(*result, sep="\n")
     else:
         print(f"No definitions found for '{word}'")
